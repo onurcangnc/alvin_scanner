@@ -1,10 +1,10 @@
-
 import requests
 import time
 import argparse
+import uuid
 
 # === CONFIG ===
-SERPER_API_KEY = "5b70d4bb74193b70d35f030bc2cc77fc5751f977"  # Replace with your actual key
+SERPER_API_KEY = ""  
 HEADERS = {
     "X-API-KEY": SERPER_API_KEY,
     "Content-Type": "application/json"
@@ -15,7 +15,7 @@ XSS_DORKS = [
     "site:.tr view.php?username=",
     "site:.tr inurl:categories.php?categoriesName=",
     "site:.tr inurl:/opencms/opencms/",
-    "site:.tr inurl:/opencms/opencms/upload"
+    "site:.tr inurl:/opencms/opencms/upload",
     "site:.tr inurl:/wp-content/plugins/wp-useronline/",
     "site:.tr inurl:.php?cmd=",
     "site:.tr inurl:.php?q=",
@@ -41,7 +41,11 @@ XSS_DORKS = [
     "site:.tr inurl:blog.php?yazi=",
     "site:.tr inurl:form.php?ad=",
     "site:.tr inurl:ara.php?q=",
-    '"intitle:"elFinder 2.1.53""'
+    '"intitle:"elFinder 2.1.53""',
+    'inurl:/wp-content/plugins/ "xss"',
+    'inurl:(login.php?user=)',
+    'inurl:(search.php?term=) "xss"',
+    'inurl:(index.php?page=) "xss"'
 ]
 
 SQLI_DORKS = [
@@ -57,7 +61,11 @@ SQLI_DORKS = [
     "site:.tr inurl:search.php?q=",
     'site:.tr intext:"You have an error in your SQL syntax"',
     'site:.tr intext:"Warning: mysql_fetch_array()" ext:php',
-    'site:.tr intext:"Unclosed quotation mark" AND intext:"Microsoft OLE DB Provider for SQL Server" AND intext:"80040e14"'
+    'site:.tr intext:"Unclosed quotation mark" AND intext:"Microsoft OLE DB Provider for SQL Server" AND intext:"80040e14"',
+    'inurl:(admin.php?id=) "sqli"',
+    'inurl:(product.php?prod_id=) "sql injection"',
+    'inurl:(newsdetail.php?newsid=)',
+    'intext:"sql error" ext:php'
 ]
 
 SENSITIVE_DOCS_DORKS = [
@@ -79,10 +87,16 @@ SENSITIVE_DOCS_DORKS = [
     'filetype:inc intext:setcookie',
     'inurl:php.ini filetype:ini',
     'filetype:pem intext:private',
-    'filetype:config config intext:appSettings "User ID"'
-    "inurl:/admin.php"
+    'filetype:config config intext:appSettings "User ID"',
+    'inurl:/admin.php',
+    'filetype:json inurl:config',
+    'filetype:yaml inurl:api',
+    'inurl:swagger filetype:json',
+    'filetype:env intext:API_KEY',
+    'intitle:"index of" ".git"',
+    'intext:"password" ext:log',
+    'filetype:pdf "confidential"'
 ]
-
 
 CCTV_DORKS = [
     'intitle:"Live View / - AXIS" | inurl:view/index.shtml',
@@ -94,9 +108,28 @@ CCTV_DORKS = [
     'intitle:"liveapplet"',
     'intitle:"Network Camera NetworkCamera"',
     'inurl:netw_tcp.shtml',
-    'intitle:"supervisioncam protocol"'
+    'intitle:"supervisioncam protocol"',
+    'inurl:/control/userimage.html',
+    'intitle:"DVR Web Client"',
+    'inurl:/app/index.html "camera"'
 ]
 
+MODERN_TECH_DORKS = [
+    'site:.tr inurl:/api/',
+    'site:.tr inurl:/graphql',
+    'site:.tr filetype:json inurl:(config | settings | credentials)',
+    'site:.tr inurl:swagger filetype:yaml',
+    'site:.tr inurl:openapi filetype:json',
+    'site:.tr intext:"api_key" filetype:js',
+    'site:.tr inurl:endpoint filetype:json',
+    'site:.tr intext:"Bearer token" ext:log',
+    'site:.tr inurl:/rest/ filetype:json',
+    'site:.tr inurl:/.well-known/ filetype:json',
+    'inurl:/api/ intext:"error"',
+    'inurl:/graphql intext:"query"',
+    'intext:"api_key" ext:txt',
+    'inurl:(/v1/ | /v2/) filetype:json'
+]
 
 def search_dork(query, page=1):
     payload = {
@@ -115,7 +148,7 @@ def run_dorks(dorks, max_pages):
     all_links = set()
     for dork in dorks:
         print(f"[+] Dork: {dork}")
-        for page in range(2, max_pages + 1):
+        for page in range(1, max_pages + 1):
             try:
                 links = search_dork(dork, page=page)
                 print(f"    → Page {page}: {len(links)} result(s)")
@@ -131,12 +164,12 @@ def main():
     parser.add_argument("--sqli", action="store_true", help="Scan SQLi dorks")
     parser.add_argument("--sensitive-documents", action="store_true", help="Scan for sensitive documents and rare exposures")
     parser.add_argument("--cctv", action="store_true", help="Scan for exposed CCTV and DVR panels")
+    parser.add_argument("--modern-tech", action="store_true", help="Scan for modern technology exposures (API, JSON, etc.)")
     parser.add_argument("--output", type=str, default="vulnerable_links.txt", help="Output file name")
 
     args = parser.parse_args()
 
-    # ✅ Hiçbir seçenek verilmediyse --help yazdır ve çık
-    if not any([args.xss, args.sqli, args.sensitive_documents, args.cctv]):
+    if not any([args.xss, args.sqli, args.sensitive_documents, args.cctv, args.modern_tech]):
         parser.print_help()
         return
 
@@ -155,6 +188,8 @@ def main():
         selected_dorks.extend(SENSITIVE_DOCS_DORKS)
     if args.cctv:
         selected_dorks.extend(CCTV_DORKS)
+    if args.modern_tech:
+        selected_dorks.extend(MODERN_TECH_DORKS)
 
     links = run_dorks(selected_dorks, max_pages)
 
