@@ -25,7 +25,7 @@ This script utilizes Google Dorking techniques via the [Serper API](https://serp
 
 ## Installation
 
-1.  **Clone or Download:** Get the script file (`dork_scanner.py` - replace with the actual filename).
+1.  **Clone or Download:** Get the script file (`alvin_scanner.py` - replace with the actual filename).
 2.  **Install Dependencies:**
     ```bash
     pip install requests
@@ -35,7 +35,7 @@ This script utilizes Google Dorking techniques via the [Serper API](https://serp
 
 **IMPORTANT:** You **MUST** replace the placeholder API key in the script with your own Serper API key.
 
-1.  Open the script file (`dork_scanner.py`).
+1.  Open the script file (`alvin_scanner.py`).
 2.  Find the line:
     ```python
     SERPER_API_KEY = "YOUR_SERPER_API_KEY"  # Replace with your actual key
@@ -50,7 +50,7 @@ This script utilizes Google Dorking techniques via the [Serper API](https://serp
 Run the script from your terminal. You need to specify at least one dork category to scan.
 
 ```bash
-python your_script_name.py [options]
+python alvin_scanner.py [options]
 ```
 
 ### Options
